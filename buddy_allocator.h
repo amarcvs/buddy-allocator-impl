@@ -1,11 +1,13 @@
 #pragma once
-#include "pool_allocator.h"
-#include "linked_list.h"
+//ma #include "pool_allocator.h"
+//ma #include "linked_list.h"
+#include <stdint.h>
+#include "bit_map.h"
 
 #define MAX_LEVELS 16
 
-// one entry of the buddy list
-typedef struct BuddyListItem {
+//ma // one entry of the buddy list
+/*typedef struct BuddyListItem {
   ListItem list;
   int idx;   // tree index
   int level; // level for the buddy
@@ -13,42 +15,43 @@ typedef struct BuddyListItem {
   int size;
   struct BuddyListItem* buddy_ptr;
   struct BuddyListItem* parent_ptr;
-} BuddyListItem;
+} BuddyListItem;*/
 
 
 typedef struct  {
-  ListHead free[MAX_LEVELS];
+  //ma ListHead free[MAX_LEVELS];
+  //ma PoolAllocator list_allocator;
+  BitMap map;
+
   int num_levels;
-  PoolAllocator list_allocator;
   char* memory; // the memory area to be managed
   int min_bucket_size; // the minimum page of RAM that can be returned
 } BuddyAllocator;
 
 
-// computes the size in bytes for the buffer of the allocator
-int BuddyAllocator_calcSize(int num_levels);
+//ma // computes the size in bytes for the buffer of the allocator
+//ma int BuddyAllocator_calcSize(int num_levels);
 
 
-// initializes the buddy allocator, and checks that the buffer is large enough
+//ma // initializes the buddy allocator, and checks that the buffer is large enough
 void BuddyAllocator_init(BuddyAllocator* alloc,
                          int num_levels,
-                         char* buffer,
+                         uint8_t *buffer,
                          int buffer_size,
                          char* memory,
                          int min_bucket_size);
-
 // returns (allocates) a buddy at a given level.
 // side effect on the internal structures
 // 0 id no memory available
-BuddyListItem* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
+//BuddyListItem* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
 
 
 // releases an allocated buddy, performing the necessary joins
 // side effect on the internal structures
-void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, BuddyListItem* item);
+//void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, BuddyListItem* item);
 
 //allocates memory
-void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size);
+//void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size);
 
 //releases allocated memory
-void BuddyAllocator_free(BuddyAllocator* alloc, void* mem);
+//void BuddyAllocator_free(BuddyAllocator* alloc, void* mem);

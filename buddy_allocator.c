@@ -5,7 +5,7 @@
 
 // these are trivial helpers to support you in case you want
 // to do a bitmap implementation
-int levelIdx(size_t idx){
+/*int levelIdx(size_t idx){
   return (int)floor(log2(idx));
 };
 
@@ -60,54 +60,60 @@ void BuddyAllocator_destroyListItem(BuddyAllocator* alloc, BuddyListItem* item){
   PoolAllocatorResult release_result=PoolAllocator_releaseBlock(&alloc->list_allocator, item);
   assert(release_result==Success);
 
-};
+};*/
 
 
 
 void BuddyAllocator_init(BuddyAllocator* alloc,
                          int num_levels,
-                         char* buffer,
+                         uint8_t* buffer,
                          int buffer_size,
                          char* memory,
                          int min_bucket_size){
 
-  // we need room also for level 0
+
+  //ma // we need room also for level 0
   alloc->num_levels=num_levels;
   alloc->memory=memory;
   alloc->min_bucket_size=min_bucket_size;
-  assert (num_levels<MAX_LEVELS);
-  // we need enough memory to handle internal structures
-  assert (buffer_size>=BuddyAllocator_calcSize(num_levels));
 
-  int list_items=1<<(num_levels+1); // maximum number of allocations, used to size the list
-  int list_alloc_size=(sizeof(BuddyListItem)+sizeof(int))*list_items;
+  assert (num_levels<MAX_LEVELS);
+  //ma // we need enough memory to handle internal structures
+  //ma assert (buffer_size>=BuddyAllocator_calcSize(num_levels));
+
+  
+  //ma int list_alloc_size=(sizeof(BuddyListItem)+sizeof(int))*list_items;
 
   printf("BUDDY INITIALIZING\n");
-  printf("\tlevels: %d", num_levels);
-  printf("\tmax list entries %d bytes\n", list_alloc_size);
+  printf("\tlevels: %d\n", num_levels);
+  //ma printf("\tmax entries %d\n", entries);			// ma useless?
   printf("\tbucket size:%d\n", min_bucket_size);
   printf("\tmanaged memory %d bytes\n", (1<<num_levels)*min_bucket_size);
   
+
   // the buffer for the list starts where the bitmap ends
-  char *list_start=buffer;
-  PoolAllocatorResult init_result=PoolAllocator_init(&alloc->list_allocator,
+  uint8_t* bufferMap=buffer;
+  BitMap_init(&alloc->map, buffer_size, bufferMap);
+
+  //ma
+  /*PoolAllocatorResult init_result=PoolAllocator_init(&alloc->list_allocator,
 						     sizeof(BuddyListItem),
 						     list_items,
 						     list_start,
 						     list_alloc_size);
-  printf("%s\n",PoolAllocator_strerror(init_result));
+  printf("%s\n",PoolAllocator_strerror(init_result));*/
 
-  // we initialize all lists
-  for (int i=0; i<MAX_LEVELS; ++i) {
+  //ma // we initialize all lists
+  /*for (int i=0; i<MAX_LEVELS; ++i) {
     List_init(alloc->free+i);
-  }
+  }*/
 
   // we allocate a list_item to mark that there is one "materialized" list
   // in the first block
-  BuddyAllocator_createListItem(alloc, 1, 0);
+  // BuddyAllocator_createListItem(alloc, 1, 0);
 };
 
-
+/*
 BuddyListItem* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level){
   if (level<0)
     return 0;
@@ -200,4 +206,4 @@ void BuddyAllocator_free(BuddyAllocator* alloc, void* mem) {
   assert(buddy->start==p);
   BuddyAllocator_releaseBuddy(alloc, buddy);
   
-}
+}*/
