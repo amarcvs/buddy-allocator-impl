@@ -9,6 +9,10 @@ int BitMap_getBytes(int bits){
 // initializes a bitmap on an external array
 void BitMap_init(BitMap* bit_map, int num_bits, uint8_t* buffer){
   bit_map->buffer=buffer;
+  
+  //ma: buffer is a global array, so every entry of it is already initialized to 0
+  //ma: [1=available, 0=unavailableORreleased]
+
   bit_map->num_bits=num_bits;
   bit_map->buffer_size=BitMap_getBytes(num_bits);
 }
