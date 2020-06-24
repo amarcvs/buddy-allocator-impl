@@ -1,5 +1,6 @@
 #include <assert.h>
 #include "bit_map.h"
+#include <stdio.h>
 
 // returns the number of bytes to store bits booleans
 int BitMap_getBytes(int bits){
@@ -24,12 +25,12 @@ void BitMap_setBit(BitMap* bit_map, int bit_num, int status){
   int byte_num=bit_num>>3;
   assert(byte_num<bit_map->buffer_size);
   
-  int bit_in_byte=bit_num%8; // offset bit in byte    
+  int bit_in_byte=bit_num%8; // offset bit in byte
 
   if (status) {
-    bit_map->buffer[byte_num] |= (1<<bit_in_byte);
+    bit_map->buffer[byte_num] |= (1<<(7-bit_in_byte));
   } else {
-    bit_map->buffer[byte_num] &= ~(1<<bit_in_byte);
+    bit_map->buffer[byte_num] &= ~(1<<(7-bit_in_byte));
   }
 }
 
@@ -38,5 +39,5 @@ int BitMap_bit(const BitMap* bit_map, int bit_num){
   int byte_num=bit_num>>3; 
   assert(byte_num<bit_map->buffer_size);
   int bit_in_byte=bit_num%8;
-  return (bit_map->buffer[byte_num] & (1<<bit_in_byte))!=0;
+  return ((bit_map->buffer[byte_num] >> (7-bit_in_byte)&1))!=0;
 }
