@@ -7,9 +7,10 @@
 typedef struct  {
   BitMap map;
   int num_levels;
-  char* memory;  	   // the memory area to be managed
-  int min_bucket_size; // the minimum page of RAM that can be returned
+  char* memory;  	     // the memory area to be managed
+  int min_bucket_size;   // the minimum page of RAM that can be returned
 } BuddyAllocator;
+
 
 // initializes the buddy allocator
 void BuddyAllocator_init(BuddyAllocator* alloc,
@@ -19,18 +20,19 @@ void BuddyAllocator_init(BuddyAllocator* alloc,
                          char* memory,
                          int min_bucket_size);
 
-// returns (allocates) a buddy at a given level.
+// returns (allocates) a buddy index at a given level.
 // side effect on the internal structures
-// 0 id no memory available
-//BuddyListItem* BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
+// 0 if no memory available
+char BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
 
 
-// releases an allocated buddy, performing the necessary joins
-// side effect on the internal structures
-//void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, BuddyListItem* item);
+// releases an allocated buddy (set to 0 the proper index), performing the necessary "joins"
+void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, char item);
 
-//allocates memory
+// allocates memory
 void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size);
 
-//releases allocated memory
-//void BuddyAllocator_free(BuddyAllocator* alloc, void* mem);
+// releases allocated memory
+void BuddyAllocator_free(BuddyAllocator* alloc, void* mem);
+
+
