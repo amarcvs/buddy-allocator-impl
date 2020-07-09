@@ -1,4 +1,4 @@
-#include <stdio.h>
+#include <stdlib.h>
 #include <assert.h>
 #include "bit_map.h"
 
@@ -31,74 +31,69 @@ int BitMap_bit(const BitMap* bit_map, int bit_num) {
   return (bit_map->buffer[byte_num] & (1<<(7-bit_in_byte)))!=0;
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-
+//ma: bits start always from bit_num=0
 char isThereABuddy(BitMap* map, int level) {
+  // STEP #1: we are in the root
   if(!level) return map->buffer[level]>>7;
 
-  int itemsPerLevel=1<<level;               //ma: entries at level "level"
-  int itemsPerLevelPrec = itemsPerLevel-1;  //ma: entries at upper levels
+  // STEP #2:
+  int levelItems=1<<level;
+  int prevLevelsItems=levelItems-1;
+  int bit_num=levelItems-1;
+  int byte_num=bit_num>>3;
+  assert(byte_num<map->buffer_size);
+  int bit_in_byte=bit_num&0x07;
   
-  //ma: always from bit_num=0
-  int bit_num= itemsPerLevel-1;     
-  int byte_num=bit_num>>3; assert(byte_num<map->buffer_size);
-  int bit_in_byte = bit_num%8;
-  
-  if(byte_num==0 && bit_in_byte < 7) {
-    int tmp = map->buffer[byte_num] >> (7-(bit_in_byte+itemsPerLevelPrec));
-    return tmp<<(itemsPerLevelPrec+(8-(bit_in_byte+itemsPerLevel)));
+  // STEP #2.1: we are in the first byte
+  if(bit_in_byte < 7) {
+  	//ma: to clean the byte from bits of useless levels
+    int tmp = map->buffer[byte_num] >> (7-(bit_in_byte+prevLevelsItems));
+    return tmp<<(7-bit_in_byte);
   }
-  else if(byte_num==0 && bit_in_byte ==7) if((map->buffer[byte_num])&1) return 1;
-  
-  //ma: next level info
-  int next_itemsPerLevel=1<<(level+1);      //ma: start from bit = 0
-  // int next_itemsPerLevelPrec = next_itemsPerLevel-1;
-  
-  //ma: byte where the next level starts
-  int next_bit_num= next_itemsPerLevel-1;     
-  int next_byte_num=next_bit_num>>3; 
-  //assert(next_byte_num<map->buffer_size); //ma: we should also modify buffer_size
-  int next_bit_in_byte = next_bit_num%8;
 
-  //ma: case where we are not within the first two levels and that the level starts with a single bit in a byte
-  if ((map->buffer[byte_num])&1) return 1;
+  // STEP #3: if the level starts from the last bit of a byte -> check that bit and if it is not 1, go to the next byte
+  if(bit_in_byte == 7) if((map->buffer[byte_num])&1) return 1;
 
-  //ma: else: we check in the other bytes next the first one
-  for(int i=0, j=byte_num+1; i<byte_num+1+next_byte_num-byte_num; ++i, ++j) {
-    if(j == byte_num+1+next_byte_num-byte_num-1) {
-      char tmp = map->buffer[j];
-      return tmp>>(8-next_bit_in_byte);
-    }
-    if(map->buffer[j]) return 1;
+  // STEP #3.1 
+  //ma: next-level info and byte where the next level starts
+  int next_levelItems=1<<(level+1);
+  int next_bit_num= next_levelItems-1;     
+  int next_byte_num=next_bit_num>>3;
+  assert(next_byte_num<map->buffer_size);
+  int next_bit_in_byte = next_bit_num&0x07;
+
+  // STEP #3.2
+  for(int i=byte_num+1; i<next_byte_num; ++i) {
+    if(map->buffer[i]) return 1;
   }
-  return 0;
-  
+
+  // STEP #3.3 
+  //ma: we are at the end
+  return map->buffer[next_byte_num]>>(8-next_bit_in_byte);
 }
 
 char takeFirstIdx(BitMap* map, int level) {
-  //ma: TODO: check if you enter a level where there are no buddy, it should not return 0
-  
-  //ma: entries at level "level"
-  int itemsPerLevel=1<<level; 
+  int levelItems=1<<level;
 
-  int bit_num=(1<<level)-1;   //ma: bit number of the first element of the level
-  uint8_t byte_num=bit_num>>3;
-  char bit_in_byte=bit_num%8; //bit offset in the byte
+  //ma: bit_num -> num of the first element of the level
+  int bit_num=levelItems-1;  
+  int byte_num=bit_num>>3;
+  int bit_in_byte=bit_num&0x07;
 
   uint8_t block = map->buffer[byte_num];
   block = block<<bit_in_byte;
 
-  char idx = bit_num-bit_in_byte; //ma: to be deleted: redundant information
-  uint8_t mask = 1<<7;
+  char idx = bit_num-bit_in_byte;
+  char mask = 1<<7;
   char count=1;
-  for(int i=0; i<itemsPerLevel+bit_in_byte; ++i) {
+  for(int i=0; i<levelItems+bit_in_byte; ++i) {
     if(block & mask) {
       if(((i+1)/8) == 0) return idx+bit_in_byte;
       return idx;
     }
     
     if(count==8) {
-      mask = 1<<7; //resettiamo la mask
+      mask = 1<<7; //ma: we reset the mask
       block = map->buffer[byte_num + ((i+1)/8)];
       count = 0;
       idx++;
@@ -111,6 +106,6 @@ char takeFirstIdx(BitMap* map, int level) {
     count++;
     }
 
-  //exit(0);
-  return -1; //ma: we should check if work!
+  //ma: a problem happened
+  exit(1);
 }
