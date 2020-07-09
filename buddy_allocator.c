@@ -40,17 +40,16 @@ void print_test(BitMap* map) {
   printf("]\n\n");
 }
 
-void BuddyAllocator_provideBuddy(BuddyAllocator* alloc, int idx, char status) {
-  // [1=available, 0=unavailableORreleased]
-  if(status) { 
-  	BitMap_setBit(&alloc->map, idx, 1); 
-  	printf("Available ");
-  } else BitMap_setBit(&alloc->map, idx, 0);
 
-  printf("Item. idx:%d, level:%d, start:%p, size:%d\n", idx,
-                                                                  levelIdx(idx),
-                                                                  start_memory(alloc, levelIdx(idx), idx),
-                                                                  itemSize(alloc, levelIdx(idx)));
+void BuddyAllocator_setBuddy(BuddyAllocator* alloc, int idx, char status) {
+  // [1=available, 0=unavailableORreleased]
+  if(status) BitMap_setBit(&alloc->map, idx, 1);
+  else BitMap_setBit(&alloc->map, idx, 0);
+
+  printf("item. idx:%d, level:%d, start:%p, size:%d\n", idx,
+                                                        levelIdx(idx),
+                                                        start_memory(alloc, levelIdx(idx), idx),
+                                                        itemSize(alloc, levelIdx(idx)));
 }
 
 // -----------------------------------------------------------------------------------------------------------------------------------------------------
@@ -82,12 +81,12 @@ void BuddyAllocator_init(BuddyAllocator* alloc,
   
 
   //ma: we set first bit of bitmap to mark that all memory is available
-  BuddyAllocator_provideBuddy(alloc, 0, 1);
+  BuddyAllocator_setBuddy(alloc, 0, 1);
 }
 
 int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level) {
   if (level<0)
-    return 0;
+    return -1;
 
   assert(level <= alloc->num_levels);
 
@@ -96,16 +95,16 @@ int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level) {
 
     //ma: there is nothing to do: all the memory is occupied
     if (parent_ptr < 0)
-      return 0;
+      return -1;
 
     //ma: parent already divided and these are the idx of his children
     int left_idx=(parent_ptr<<1)+1;
     int right_idx=left_idx+1;
 
-    printf("splitting: level:%d, (left_idx: %d, right_idx: %d) -> level:%d\n", level-1, left_idx, right_idx, level);
+    printf("splitting level %d:\n", level-1);
 
-    BuddyAllocator_provideBuddy(alloc, left_idx, 1);
-    BuddyAllocator_provideBuddy(alloc, right_idx, 1);
+    BuddyAllocator_setBuddy(alloc, left_idx, 1);
+    BuddyAllocator_setBuddy(alloc, right_idx, 1);
   }
 
   //ma: the level is not all busy [there is at least a buddy]
@@ -118,32 +117,29 @@ int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level) {
   }
 
   //ma: a problem happened
-  assert(1);
   return -1;
 }
 
-
-
-void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int item) {
-  int parent_ptr=parentIdx(item);
-  int buddy_ptr=buddyIdx(item);
+void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int buddy) {
+  int parent_ptr=parentIdx(buddy);
+  int buddy_ptr=buddyIdx(buddy);
   
   //ma: buddy becomes available again
-  BitMap_setBit(&alloc->map, item, 1);
+  BitMap_setBit(&alloc->map, buddy, 1);
   
   // if on top of the chain, do nothing
-  if (! item)
+  if (! buddy)
     return;
   
-  // if the buddy of this item is not free, we do nothing 
+  // if the "buddy" of this buddy is not free, we do nothing 
   if (BitMap_bit(&alloc->map, buddy_ptr)==0 ) 
     return;
   
   //ma: we merge the two buddies ...
-  printf("merging: level: %d\n", levelIdx(item));
+  printf("merging level %d:\n", levelIdx(buddy));
 
-  BuddyAllocator_provideBuddy(alloc, item, 0);
-  BuddyAllocator_provideBuddy(alloc, buddy_ptr, 0);
+  BuddyAllocator_setBuddy(alloc, buddy, 0);
+  BuddyAllocator_setBuddy(alloc, buddy_ptr, 0);
 
   // ... and we make (release) the parent available
   BuddyAllocator_releaseBuddy(alloc, parent_ptr);
@@ -160,12 +156,11 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
   if (level>alloc->num_levels)
     level=alloc->num_levels;
 
-  printf("requested: %d bytes, level %d \n", size, level);
+  printf("requested %d bytes, level %d \n", size, level);
 
   // we get a buddy of that size;
   int buddy=BuddyAllocator_getBuddy(alloc, level);
-  if (! buddy)
-    return 0;
+  assert(buddy >= 0);
   
   //ma: now we return a piece of memory
   int* buddymemorystart = start_memory(alloc, level, buddy);
@@ -175,15 +170,13 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
   return buddymemorystart + 1;
 }
 
-
-// releases allocated memory
 void BuddyAllocator_free(BuddyAllocator* alloc, void* mem) {
   // we retrieve the buddy from the system
   int* buddy_ptr=(int*)mem;
   int buddy = (--buddy_ptr)[0];
   int level = levelIdx(buddy);
   int dim = itemSize(alloc, level);
-  printf("freeing %p, level %d, %d bytes\n", buddy_ptr, level, dim);
+  printf("freeing %p, idx %d, level %d, %d bytes\n", buddy_ptr, buddy, level, dim);
   
   // sanity check;
   assert(buddy_ptr==start_memory(alloc, level, buddy));
