@@ -20,14 +20,13 @@ void BuddyAllocator_init(BuddyAllocator* alloc,
                          char* memory,
                          int min_bucket_size);
 
-// returns (allocates) a buddy index at a given level.
-// side effect on the internal structures
+// returns a buddy index at a given level.
 // 0 if no memory available
-char BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
+int BuddyAllocator_getBuddy(BuddyAllocator* alloc, int level);
 
 
-// releases an allocated buddy (set to 0 the proper index), performing the necessary "joins"
-void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, char item);
+// releases a buddy (set to 0 the proper index), performing the necessary "joins"
+void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int item);
 
 // allocates memory
 void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size);

@@ -25,4 +25,4 @@ int BitMap_bit(const BitMap* bit_map, int bit_num);
 char isThereABuddy(BitMap* map, int level);
 
 //ma: takes the first free index on that level
-char takeFirstIdx(BitMap* map, int level);
+int takeFirstIdx(BitMap* map, int level);

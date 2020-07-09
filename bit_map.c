@@ -72,7 +72,7 @@ char isThereABuddy(BitMap* map, int level) {
   return map->buffer[next_byte_num]>>(8-next_bit_in_byte);
 }
 
-char takeFirstIdx(BitMap* map, int level) {
+int takeFirstIdx(BitMap* map, int level) {
   int levelItems=1<<level;
 
   //ma: bit_num -> num of the first element of the level
@@ -83,8 +83,8 @@ char takeFirstIdx(BitMap* map, int level) {
   uint8_t block = map->buffer[byte_num];
   block = block<<bit_in_byte;
 
-  char idx = bit_num-bit_in_byte;
-  char mask = 1<<7;
+  int idx = bit_num-bit_in_byte;
+  uint8_t mask = 1<<7;
   char count=1;
   for(int i=0; i<levelItems+bit_in_byte; ++i) {
     if(block & mask) {
