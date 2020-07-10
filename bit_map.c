@@ -15,14 +15,13 @@ void BitMap_init(BitMap* bit_map, int num_bits, uint8_t* buffer) {
 void BitMap_setBit(BitMap* bit_map, int bit_num, int status) {
   int byte_num=bit_num>>3;
   assert(byte_num<bit_map->buffer_size);
-  // or bit_num%8 with compiler optimization
   int bit_in_byte=bit_num&0x07; 
   if (status) {
     bit_map->buffer[byte_num] |= (1<<(7-bit_in_byte));
   } else {
     bit_map->buffer[byte_num] &= ~(1<<(7-bit_in_byte));
   }
-}  
+}
 
 int BitMap_bit(const BitMap* bit_map, int bit_num) {
   int byte_num=bit_num>>3; 

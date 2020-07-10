@@ -21,7 +21,7 @@ void BitMap_setBit(BitMap* bit_map, int bit_num, int status);
 // inspects the status of the bit bit_num
 int BitMap_bit(const BitMap* bit_map, int bit_num);
 
-//ma: check if there is a Buddy in the given level
+//ma: check if there is a Buddy on that level
 char isThereABuddy(BitMap* map, int level);
 
 //ma: takes the first free index on that level

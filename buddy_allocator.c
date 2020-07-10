@@ -40,7 +40,7 @@ void print_test(BitMap* map) {
   printf("]\n\n");
 }
 
-
+//ma: change the status of the buddy
 void BuddyAllocator_setBuddy(BuddyAllocator* alloc, int idx, char status) {
   // [1=available, 0=unavailableORreleased]
   if(status) BitMap_setBit(&alloc->map, idx, 1);
@@ -79,7 +79,6 @@ void BuddyAllocator_init(BuddyAllocator* alloc,
   printf("\tmanaged memory: %d bytes\n", (1<<num_levels)*min_bucket_size);
   printf("\tbucket size: %d bytes\n", min_bucket_size);
   
-
   //ma: we set first bit of bitmap to mark that all memory is available
   BuddyAllocator_setBuddy(alloc, 0, 1);
 }
@@ -160,7 +159,9 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
 
   // we get a buddy of that size;
   int buddy=BuddyAllocator_getBuddy(alloc, level);
-  assert(buddy >= 0);
+
+  // sanity check;
+  assert(buddy >= 0 && "Not enough memory!");
   
   //ma: now we return a piece of memory
   int* buddymemorystart = start_memory(alloc, level, buddy);
