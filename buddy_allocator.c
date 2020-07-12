@@ -31,15 +31,6 @@ void* start_memory(BuddyAllocator* alloc, int level, int buddy) {
   return alloc->memory+(itemSize(alloc, level)*startIdx(buddy));
 }
 
-//ma: print the bitmap
-void print_test(BitMap* map) {
-  printf("Bitmap state [ ");
-  for(int i = 0; i <map->num_bits; i++) {
-    printf("%u ", BitMap_bit(map, i));
-  }
-  printf("]\n\n");
-}
-
 //ma: change the status of the buddy
 void BuddyAllocator_setBuddy(BuddyAllocator* alloc, int idx, char status) {
   // [1=available, 0=unavailableORreleased]
@@ -147,6 +138,9 @@ void BuddyAllocator_releaseBuddy(BuddyAllocator* alloc, int buddy) {
 
 void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
 
+  // invalid allocation
+  if(size <= 0 || size > itemSize(alloc, 0)) return NULL;
+  
   // we determine the level of the page
   int mem_size=(1<<alloc->num_levels)*alloc->min_bucket_size;
   int  level=floor(log2(mem_size/(size+4)));
@@ -160,8 +154,8 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
   // we get a buddy of that size;
   int buddy=BuddyAllocator_getBuddy(alloc, level);
 
-  // sanity check;
-  assert(buddy >= 0 && "Not enough memory!");
+  // invalid allocation
+  if(buddy < 0) return NULL;
   
   //ma: now we return a piece of memory
   int* buddymemorystart = start_memory(alloc, level, buddy);
@@ -172,9 +166,14 @@ void* BuddyAllocator_malloc(BuddyAllocator* alloc, int size) {
 }
 
 void BuddyAllocator_free(BuddyAllocator* alloc, void* mem) {
+
+  //ma: invalid deallocation: so, do nothing
+  if(!mem) return;
+
   // we retrieve the buddy from the system
   int* buddy_ptr=(int*)mem;
   int buddy = (--buddy_ptr)[0];
+
   int level = levelIdx(buddy);
   int dim = itemSize(alloc, level);
   printf("freeing %p, idx %d, level %d, %d bytes\n", buddy_ptr, buddy, level, dim);
