@@ -1,6 +1,7 @@
 #include "buddy_allocator.h"
 #include <stdlib.h>
 #include <stdio.h>
+#include "bit_map.h"
 
 #define BUDDY_LEVELS 7
 #define MEMORY_SIZE (1024*1024)
@@ -14,129 +15,167 @@ uint8_t buffer[BUFFER_SIZE];
 
 BuddyAllocator alloc;
 
-/* ma: to see how the bitmap changes over time you should uncomment below
-   but for better clarity reduce the number of levels (e.g. 4 levels) */
-// void print_test(BitMap* map); 
-
 int main(int argc, char** argv) {
+
+  /* ma: to see how the bitmap changes over time you can call print_bitmap function
+   	 every allocation/deallocation; for better clarity reduce the number of levels (e.g. 4 levels) */
 
   printf("Allocator initialization...\n");
   BuddyAllocator_init(&alloc, BUDDY_LEVELS, buffer, BUFFER_SIZE, memory, MIN_BUCKET_SIZE);
   printf("DONE\n\n");
   
-  // print_test(&alloc.map);
+  printf("_STAGE_1________________________________________________________\n\n");
+
+  //ma: #1 allocations and deallocations in increasing order of memory required
   printf("|FIRST ALLOCATION:\n");
-  char* p1=(char*)BuddyAllocator_malloc(&alloc, 500800);
+  char* p1=(char*)BuddyAllocator_malloc(&alloc, 45);
   printf("\n");
-  //print_test(&alloc.map);
 
   printf("|SECOND ALLOCATION:\n");
-  int* p2=(int*)BuddyAllocator_malloc(&alloc, 100);
+  int* p2=(int*)BuddyAllocator_malloc(&alloc, 1024);
   printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|THIRD ALLOCATION:\n");
-  int* p3=(int*)BuddyAllocator_malloc(&alloc, 70001);
-  printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|FOURTH ALLOCATION:\n");
-  void* p4=BuddyAllocator_malloc(&alloc, 5000);
-  printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|FIFTH ALLOCATION:\n");
-  long* p5=(long*)BuddyAllocator_malloc(&alloc, 60670);
-  printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|SIXTH ALLOCATION:\n");
-  char* p6=(char*)BuddyAllocator_malloc(&alloc, 50);
-  printf("\n");
-  //print_test(&alloc.map);
   
-  printf("|SEVENTH ALLOCATION:\n");
-  double* p7=(double*)BuddyAllocator_malloc(&alloc, 333);
-  //print_test(&alloc.map);
-
-  printf("_____________________________________________________________________\n\n");
-
+  printf("|THIRD ALLOCATION:\n");
+  double* p3=(double*)BuddyAllocator_malloc(&alloc, 90000);
+  printf("\n");
+  
+  printf("|FOURTH ALLOCATION:\n");
+  void* p4=BuddyAllocator_malloc(&alloc, 257000);
+  printf("\n");
+  
+  printf("|FIFTH ALLOCATION:\n");
+  long* p5=(long*)BuddyAllocator_malloc(&alloc, 502587);
+  printf("\n");
+  
   printf("|FIRST DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p1);
   printf("\n");
-  //print_test(&alloc.map);
-
+  
   printf("|SECOND DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p2);
   printf("\n");
-  //print_test(&alloc.map);
-
+  
   printf("|THIRD DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p3);
   printf("\n");
-  //print_test(&alloc.map);
-
+  
   printf("|FOURTH DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p4);
   printf("\n");
-  //print_test(&alloc.map);;
-
+  
   printf("|FIFTH DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p5);
   printf("\n");
-  //print_test(&alloc.map);
+  
+  printf("_STAGE_2________________________________________________________\n\n");
 
-  printf("|SIXTH DEALLOCATION:\n");
-  BuddyAllocator_free(&alloc, p6);
-  printf("\n");
-  //print_test(&alloc.map);
+  //ma: #2 trying to make an invalid allocations/deallocations
+  printf("|FIRST INVALID ALLOCATION/DEALLOCATION:\n");
+  p1=(char*)BuddyAllocator_malloc(&alloc, 0);
+  if (!p1) printf("Error: impossible to allocate this amount of memory!\n");
 
-  printf("|SEVENTH DEALLOCATION:\n");
-  BuddyAllocator_free(&alloc, p7);
-  //print_test(&alloc.map);
-
-  printf("_____________________________________________________________________\n\n");
-
-  printf("|ANOTHER ALLOCATION:\n");
-  p1=BuddyAllocator_malloc(&alloc, 55);
-  printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|ANOTHER DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p1);
-  //print_test(&alloc.map);
-
-  printf("_____________________________________________________________________\n\n");
-	
-  // ma: now we release backwards 
-  printf("|ALLOCATION #1:\n");
-  p2=BuddyAllocator_malloc(&alloc, 87554);
   printf("\n");
-  //print_test(&alloc.map);
 
-  printf("|ALLOCATION #2:\n");
-  p3=BuddyAllocator_malloc(&alloc, 342);
+  printf("|SECOND INVALID ALLOCATION/DEALLOCATION:\n");
+  p2=(int*)BuddyAllocator_malloc(&alloc, 5000000);
+  if (!p2) printf("Error: impossible to allocate this amount of memory!\n");
+
+  BuddyAllocator_free(&alloc, p2);
   printf("\n");
-  //print_test(&alloc.map);
 
-  printf("|ALLOCATION #3:\n");
-  p4=BuddyAllocator_malloc(&alloc, 500400);
-  printf("\n");
-  //print_test(&alloc.map);
+  printf("|THIRD INVALID ALLOCATION/DEALLOCATION:\n");
+  p3=(double*)BuddyAllocator_malloc(&alloc, -56);
+  if (!p3) printf("Error: impossible to allocate this amount of memory!\n");
 
-  printf("|DEALLOCATION #1:\n");
-  BuddyAllocator_free(&alloc, p4);
-  printf("\n");
-  //print_test(&alloc.map);
-
-  printf("|DEALLOCATION #2:\n");
   BuddyAllocator_free(&alloc, p3);
   printf("\n");
-  //print_test(&alloc.map);
 
-  printf("|DEALLOCATION #3:\n");
+  printf("_STAGE_3________________________________________________________\n\n");
+	
+  //ma: #3 and now we also deallocate in reverse
+  printf("|FIRST ALLOCATION:\n");
+  p1=(char*)BuddyAllocator_malloc(&alloc, 644);
+  printf("\n");
+  
+  printf("|SECOND ALLOCATION:\n");
+  p2=(int*)BuddyAllocator_malloc(&alloc, 20546);
+  printf("\n");
+  
+  printf("|THIRD ALLOCATION:\n");
+  p3=(double*)BuddyAllocator_malloc(&alloc, 100000);
+  printf("\n");
+  
+  printf("|FOURTH ALLOCATION:\n");
+  p4=BuddyAllocator_malloc(&alloc, 250123);
+  printf("\n");
+  
+  printf("|FIFTH ALLOCATION:\n");
+  p5=(long*)BuddyAllocator_malloc(&alloc, 502587);
+  printf("\n");
+  
+  printf("|FIRST DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p5);
+  printf("\n");
+  
+  printf("|SECOND DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p4);
+  printf("\n");
+  
+  printf("|THIRD DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p3);
+  printf("\n");
+  
+  printf("|FOURTH DEALLOCATION:\n");
   BuddyAllocator_free(&alloc, p2);
-  //print_test(&alloc.map);
-
+  printf("\n");
+  
+  printf("|FIFTH DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p1);
+  printf("\n");
+  
+  printf("_STAGE_4________________________________________________________\n\n");
+	
+  //ma: #4 scattered allocations and deallocations in scattered order of memory required
+  printf("|FIRST ALLOCATION:\n");
+  p1=(char*)BuddyAllocator_malloc(&alloc, 500000);
+  printf("\n");
+  
+  printf("|SECOND ALLOCATION:\n");
+  p2=(int*)BuddyAllocator_malloc(&alloc, 256);
+  printf("\n");
+  
+  printf("|THIRD ALLOCATION:\n");
+  p3=(double*)BuddyAllocator_malloc(&alloc, 100000);
+  printf("\n");
+  
+  printf("|FOURTH ALLOCATION:\n");
+  p4=BuddyAllocator_malloc(&alloc, 250000);
+  printf("\n");
+  
+  printf("|FIFTH ALLOCATION:\n");
+  p5=(long*)BuddyAllocator_malloc(&alloc, 8000);
+  printf("\n");
+  
+  printf("|FIRST DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p3);
+  printf("\n");
+  
+  printf("|SECOND DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p5);
+  printf("\n");
+  
+  printf("|THIRD DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p1);
+  printf("\n");
+  
+  printf("|FOURTH DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p4);
+  printf("\n");
+  
+  printf("|FIFTH DEALLOCATION:\n");
+  BuddyAllocator_free(&alloc, p2);
+  printf("\n");
+  
   return EXIT_SUCCESS;
 }
