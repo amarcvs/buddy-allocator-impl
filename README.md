@@ -5,10 +5,13 @@
 ### How to run?
 0. Open the terminal
 1. Clone the repository
-2. Start the compilation process
 ```bash
 cd <somewhere_on_your_pc>
 git clone https://github.com/amarcvs/buddy-allocator-impl.git
+```
+2. Start the compilation process
+```bash
+make
 ```
 3. Start execution
 ```bash
